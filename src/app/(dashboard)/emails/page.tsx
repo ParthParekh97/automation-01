@@ -1,54 +1,111 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { formatDate, statusColor } from "@/lib/utils";
-import Link from "next/link";
+import { EmailDashboard } from "@/components/emails/EmailDashboard";
+
+// Supabase join shape
+interface EmailJoinRow {
+  id: string;
+  lead_id: string;
+  subject: string;
+  sent_at: string | null;
+  direction: string;
+  status: string;
+  leads: {
+    id: string;
+    name: string;
+    email: string | null;
+    status: string;
+    client_id: string;
+  } | null;
+}
 
 export default async function EmailsPage() {
   const supabase = await createClient();
-  const { data: emails } = await supabase
-    .from("emails")
-    .select("*, leads(name)")
-    .order("sent_at", { ascending: false });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // All emails for this client (joined with lead data), ordered newest first.
+  // We use this to build per-lead summaries without N+1 queries.
+  const [{ data: emailRows }, { data: allLeads }] = await Promise.all([
+    supabase
+      .from("emails")
+      .select(
+        "id, lead_id, subject, sent_at, direction, status, leads(id, name, email, status, client_id)"
+      )
+      .order("sent_at", { ascending: false })
+      .limit(500),
+
+    supabase
+      .from("leads")
+      .select("id, name, email, client_id")
+      .not("email", "is", null)
+      .order("name"),
+  ]);
+
+  // Build one summary entry per lead (first row = latest email, because ordered desc)
+  const seenLeads = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      email: string | null;
+      status: string;
+      client_id: string;
+      email_count: number;
+      latest_email: { subject: string; sent_at: string | null; direction: string; status: string };
+    }
+  >();
+
+  for (const row of (emailRows as EmailJoinRow[]) ?? []) {
+    const lead = row.leads;
+    if (!lead) continue;
+    if (!seenLeads.has(row.lead_id)) {
+      seenLeads.set(row.lead_id, {
+        id: lead.id,
+        name: lead.name,
+        email: lead.email,
+        status: lead.status,
+        client_id: lead.client_id,
+        email_count: 1,
+        latest_email: {
+          subject: row.subject,
+          sent_at: row.sent_at,
+          direction: row.direction,
+          status: row.status,
+        },
+      });
+    } else {
+      seenLeads.get(row.lead_id)!.email_count++;
+    }
+  }
+
+  const leadsWithActivity = Array.from(seenLeads.values());
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Emails</h1>
-        <p className="text-white/50 text-sm mt-1">{emails?.length ?? 0} total emails</p>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Emails</h1>
+          <p className="text-white/50 text-sm mt-1">
+            {leadsWithActivity.length} lead{leadsWithActivity.length !== 1 ? "s" : ""} with email activity
+          </p>
+        </div>
       </div>
 
-      <div className="glass-card overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-white/[0.07]">
-              {["Lead", "Subject", "Status", "Sent"].map((h) => (
-                <th key={h} className="text-left text-xs font-medium text-white/40 px-4 py-3 uppercase tracking-wide">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {emails?.length ? emails.map((email) => (
-              <tr key={email.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
-                <td className="px-4 py-3">
-                  <Link href={`/leads/${email.lead_id}`} className="text-sm font-medium text-white hover:text-brand-400 transition-colors">
-                    {(email.leads as { name: string } | null)?.name ?? "Unknown"}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-sm text-white/70 max-w-xs truncate">{email.subject}</td>
-                <td className="px-4 py-3">
-                  <span className={`status-badge ${statusColor(email.status)}`}>{email.status}</span>
-                </td>
-                <td className="px-4 py-3 text-sm text-white/40">
-                  {email.sent_at ? formatDate(email.sent_at) : "Not sent"}
-                </td>
-              </tr>
-            )) : (
-              <tr>
-                <td colSpan={4} className="px-4 py-12 text-center text-white/30 text-sm">No emails logged yet</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Suspense
+        fallback={
+          <div className="glass-card h-[calc(100vh-11rem)] flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-brand-400/30 border-t-brand-400 rounded-full animate-spin" />
+          </div>
+        }
+      >
+        <EmailDashboard
+          leadsWithActivity={leadsWithActivity}
+          allLeads={(allLeads ?? []) as { id: string; name: string; email: string | null; client_id: string }[]}
+          clientId={user!.id}
+        />
+      </Suspense>
     </div>
   );
 }

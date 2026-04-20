@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { startSequence } from "@/lib/sequence";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -33,5 +34,14 @@ export async function POST(request: Request) {
 
   const { data, error } = await supabase.from("leads").insert(parsed.data).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Auto-start email sequence for new leads that have an email address
+  if (data && data.status === "new" && data.email) {
+    const admin = await createAdminClient();
+    startSequence(data.id, data.client_id, admin).catch((err) =>
+      console.error("[leads] startSequence failed", err)
+    );
+  }
+
   return NextResponse.json(data, { status: 201 });
 }

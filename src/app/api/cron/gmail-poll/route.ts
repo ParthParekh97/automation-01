@@ -9,6 +9,7 @@ import {
 } from "@/lib/gmail";
 import { sendSlackNotification, buildEmailReplyPayload } from "@/lib/slack";
 import { upsertEmailConversation } from "@/app/api/email/send/route";
+import { markSequenceReplied } from "@/lib/sequence";
 import { NextResponse } from "next/server";
 
 const tag = "[gmail-poll]";
@@ -215,6 +216,11 @@ async function processMessage(params: {
     message,
     supabase,
   });
+
+  // Cancel any active email sequence for this lead — they replied
+  markSequenceReplied(lead.id, supabase).catch((err) =>
+    console.error(`${tag} markSequenceReplied failed for lead ${lead.id}:`, err)
+  );
 
   // Slack notification
   try {

@@ -7,6 +7,7 @@ export type ConversationChannel = "sms" | "whatsapp" | "facebook" | "instagram" 
 export type BookingStatus = "pending" | "confirmed" | "cancelled" | "rescheduled" | "completed" | "no_show";
 export type IntegrationProvider = "gmail" | "outlook" | "facebook" | "instagram";
 export type EmailDirection = "outbound" | "inbound";
+export type SequenceStatus = "active" | "paused" | "completed" | "cancelled";
 
 export interface Client {
   id: string;
@@ -15,6 +16,8 @@ export interface Client {
   token: string;
   active: boolean;
   plan: Plan;
+  service_type: string | null;
+  booking_link: string | null;
   created_at: string;
 }
 
@@ -98,6 +101,21 @@ export interface Booking {
   created_at: string;
 }
 
+export interface EmailSequence {
+  id: string;
+  lead_id: string;
+  client_id: string;
+  status: SequenceStatus;
+  current_step: number;
+  next_send_at: string | null;
+  replied: boolean;
+  thread_id: string | null;
+  last_email_id: string | null;
+  cancelled_reason: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
 export interface LeadSummary extends Lead {
   call_count: number;
   email_count: number;
@@ -117,6 +135,7 @@ export type Database = {
       emails: { Row: Email; Insert: Omit<Email, "id">; Update: Partial<Omit<Email, "id">> };
       conversations: { Row: Conversation; Insert: Omit<Conversation, "id" | "created_at">; Update: Partial<Omit<Conversation, "id">> };
       bookings: { Row: Booking; Insert: Omit<Booking, "id" | "created_at">; Update: Partial<Omit<Booking, "id">> };
+      email_sequences: { Row: EmailSequence; Insert: Omit<EmailSequence, "id" | "created_at">; Update: Partial<Omit<EmailSequence, "id">> };
     };
     Views: {
       lead_summary: { Row: LeadSummary };

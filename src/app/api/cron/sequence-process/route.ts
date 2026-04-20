@@ -18,13 +18,21 @@ export async function POST(request: Request) {
 
   const supabase = await createAdminClient();
 
-  // Fetch all due sequences (partial index keeps this fast)
+  // Kill switch: only process sequences for active clients
+  const { data: activeClients } = await supabase
+    .from("clients")
+    .select("id")
+    .eq("active", true);
+  const activeClientIds = (activeClients ?? []).map((c) => c.id);
+
+  // Fetch all due sequences for active clients (partial index keeps this fast)
   const { data: sequences, error } = await supabase
     .from("email_sequences")
     .select("id, lead_id, client_id, current_step, thread_id, last_email_id")
     .eq("status", "active")
     .eq("replied", false)
     .lte("next_send_at", new Date().toISOString())
+    .in("client_id", activeClientIds.length ? activeClientIds : ["none"])
     .order("next_send_at", { ascending: true });
 
   if (error) {

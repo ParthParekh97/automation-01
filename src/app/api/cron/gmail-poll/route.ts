@@ -32,7 +32,14 @@ export async function POST(request: Request) {
 
   const supabase = await createAdminClient();
 
-  // Load all Gmail integrations
+  // Kill switch: only poll active clients
+  const { data: activeClients } = await supabase
+    .from("clients")
+    .select("id")
+    .eq("active", true);
+  const activeClientIds = new Set((activeClients ?? []).map((c) => c.id));
+
+  // Load Gmail integrations for active clients only
   const { data: integrations, error: intErr } = await supabase
     .from("client_integrations")
     .select("*")
@@ -45,8 +52,8 @@ export async function POST(request: Request) {
 
   const summary: Array<{ client_id: string; processed: number; errors: string[] }> = [];
 
-  // Process each client sequentially to avoid hammering Google's rate limits
-  for (const integration of integrations ?? []) {
+  // Process each active client sequentially to avoid hammering Google's rate limits
+  for (const integration of (integrations ?? []).filter((i) => activeClientIds.has(i.client_id))) {
     const result = await processIntegration(integration as IntegrationRow, supabase);
     summary.push({ client_id: integration.client_id, ...result });
   }

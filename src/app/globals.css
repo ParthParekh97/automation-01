@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-start: #0f0c29;
+    --bg-mid: #302b63;
+    --bg-end: #24243e;
+  }
+
+  body {
+    @apply bg-app-gradient min-h-screen text-white;
+    background-attachment: fixed;
+  }
+
+  * {
+    @apply border-white/10;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/20 rounded-full;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-glass backdrop-blur-md border border-white/10 rounded-2xl shadow-glass;
+  }
+
+  .glass-card-sm {
+    @apply bg-glass-dark backdrop-blur-sm border border-white/[0.07] rounded-xl shadow-glass-sm;
+  }
+
+  .glass-input {
+    @apply bg-white/5 border border-white/10 rounded-xl px-4 py-2.5
+           text-white placeholder-white/30 outline-none
+           focus:border-brand-400/60 focus:ring-1 focus:ring-brand-400/30
+           transition-all duration-200;
+  }
+
+  .glass-btn-primary {
+    @apply bg-brand-500 hover:bg-brand-600 text-white font-medium
+           px-5 py-2.5 rounded-xl transition-all duration-200
+           shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40
+           active:scale-[0.98];
+  }
+
+  .glass-btn-secondary {
+    @apply bg-white/5 hover:bg-white/10 border border-white/10
+           text-white/80 hover:text-white font-medium
+           px-5 py-2.5 rounded-xl transition-all duration-200
+           active:scale-[0.98];
+  }
+
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/60
+           hover:text-white hover:bg-white/5 transition-all duration-150
+           text-sm font-medium;
+  }
+
+  .sidebar-link.active {
+    @apply text-white bg-white/10;
+  }
+}

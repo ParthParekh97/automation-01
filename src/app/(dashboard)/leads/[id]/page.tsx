@@ -1,8 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import { formatDate, formatDateTime, formatDuration, statusColor } from "@/lib/utils";
-import { CallButton } from "@/components/calls/CallButton";
+import { statusColor } from "@/lib/utils";
 import Link from "next/link";
+import {
+  LeadProfileClient,
+  type TimelineEvent,
+} from "@/components/leads/LeadProfileClient";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -18,135 +21,142 @@ export default async function LeadDetailPage({ params }: Props) {
     { data: emails },
     { data: conversations },
     { data: bookings },
+    { data: notes },
+    { data: activeSeq },
   ] = await Promise.all([
     supabase.from("leads").select("*").eq("id", id).single(),
-    supabase.from("calls").select("*").eq("lead_id", id).order("created_at", { ascending: false }),
-    supabase.from("emails").select("id, subject, body, status, sent_at, direction, from_email, gmail_message_id, thread_id").eq("lead_id", id).order("sent_at", { ascending: false }),
-    supabase.from("conversations").select("id, channel, created_at").eq("lead_id", id),
-    supabase.from("bookings").select("*").eq("lead_id", id).order("booking_date", { ascending: false }),
+    supabase
+      .from("calls")
+      .select("id, outcome, duration, transcript, created_at")
+      .eq("lead_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("emails")
+      .select("id, subject, body, status, sent_at, direction, from_email")
+      .eq("lead_id", id)
+      .order("sent_at", { ascending: false }),
+    supabase
+      .from("conversations")
+      .select("id, channel, messages, created_at")
+      .eq("lead_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("bookings")
+      .select("id, booking_date, status, created_at")
+      .eq("lead_id", id)
+      .order("booking_date", { ascending: false }),
+    supabase
+      .from("lead_notes")
+      .select("id, type, content, metadata, created_at")
+      .eq("lead_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("email_sequences")
+      .select("id")
+      .eq("lead_id", id)
+      .eq("status", "active")
+      .limit(1),
   ]);
 
   if (!lead) notFound();
 
+  // ── Build unified timeline ──────────────────────────────────────────────────
+  const timeline: TimelineEvent[] = [
+    ...(calls ?? []).map((c) => ({
+      id: c.id,
+      at: c.created_at,
+      type: "call" as const,
+      data: c,
+    })),
+    ...(emails ?? []).map((e) => ({
+      id: e.id,
+      at: e.sent_at ?? e.id,
+      type: (e.direction === "inbound" ? "email_in" : "email_out") as
+        | "email_in"
+        | "email_out",
+      data: e,
+    })),
+    ...(conversations ?? []).map((c) => ({
+      id: c.id,
+      at: c.created_at,
+      type: "conversation" as const,
+      data: c,
+    })),
+    ...(bookings ?? []).map((b) => ({
+      id: b.id,
+      at: b.booking_date,
+      type: "booking" as const,
+      data: b,
+    })),
+    ...(notes ?? []).map((n) => ({
+      id: n.id,
+      at: n.created_at,
+      type: (n.type === "status_change" ? "status_change" : "note") as
+        | "status_change"
+        | "note",
+      data: n,
+    })),
+  ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
+  const totalTouchpoints =
+    (calls?.length ?? 0) +
+    (emails?.length ?? 0) +
+    (conversations?.length ?? 0) +
+    (bookings?.length ?? 0);
+
   return (
-    <div className="space-y-6 max-w-5xl">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-white/40 text-sm mb-2">
-            <Link href="/leads" className="hover:text-white/60 transition-colors">Leads</Link>
-            <span>/</span>
-            <span className="text-white/70">{lead.name}</span>
-          </div>
-          <h1 className="text-2xl font-bold text-white">{lead.name}</h1>
-          <div className="flex items-center gap-3 mt-2 flex-wrap">
-            {lead.phone && <span className="text-white/50 text-sm">📞 {lead.phone}</span>}
-            {lead.email && <span className="text-white/50 text-sm">✉️ {lead.email}</span>}
-            <span className="text-white/50 text-sm capitalize">🔗 {lead.source}</span>
-          </div>
+    <div className="space-y-6 max-w-6xl">
+      {/* ── Page header ──────────────────────────────────────────────────── */}
+      <div>
+        <div className="flex items-center gap-2 text-white/40 text-xs mb-3">
+          <Link href="/leads" className="hover:text-white/70 transition-colors">
+            Leads
+          </Link>
+          <span>/</span>
+          <Link href="/pipeline" className="hover:text-white/70 transition-colors">
+            Pipeline
+          </Link>
+          <span>/</span>
+          <span className="text-white/60">{lead.name}</span>
         </div>
-        <div className="flex items-center gap-3">
-          <span className={`status-badge text-sm ${statusColor(lead.status)}`}>{lead.status}</span>
-          <CallButton
-            leadId={lead.id}
-            clientId={lead.client_id}
-            phone={lead.phone}
-            variant="full"
-          />
+
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">{lead.name}</h1>
+            <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+              {lead.phone && (
+                <span className="text-white/45 text-sm">📞 {lead.phone}</span>
+              )}
+              {lead.email && (
+                <span className="text-white/45 text-sm">✉️ {lead.email}</span>
+              )}
+              <span className="text-white/45 text-sm capitalize">
+                🔗 {lead.source}
+              </span>
+            </div>
+          </div>
+          <span className={`status-badge text-sm ${statusColor(lead.status)}`}>
+            {lead.status.replace(/_/g, " ")}
+          </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calls */}
-        <div className="glass-card p-5">
-          <h2 className="font-semibold text-white mb-4 flex items-center gap-2">📞 Calls <span className="text-white/30 text-sm font-normal">({calls?.length ?? 0})</span></h2>
-          <div className="space-y-3">
-            {calls?.length ? calls.map((call) => (
-              <div key={call.id} className="glass-card-sm p-3">
-                <div className="flex items-center justify-between">
-                  <span className={`status-badge text-xs ${statusColor(call.outcome)}`}>{call.outcome}</span>
-                  <span className="text-white/30 text-xs">{formatDuration(call.duration)}</span>
-                </div>
-                <p className="text-xs text-white/40 mt-1">{formatDateTime(call.created_at)}</p>
-                {call.transcript && (
-                  <p className="text-xs text-white/50 mt-2 line-clamp-2">{call.transcript}</p>
-                )}
-              </div>
-            )) : <p className="text-white/30 text-sm">No calls yet</p>}
-          </div>
-        </div>
-
-        {/* Emails */}
-        <div className="glass-card p-5">
-          <h2 className="font-semibold text-white mb-4 flex items-center gap-2">
-            ✉️ Emails
-            <span className="text-white/30 text-sm font-normal">({emails?.length ?? 0})</span>
-          </h2>
-          <div className="space-y-2">
-            {emails?.length ? emails.map((email) => {
-              const isInbound = email.direction === "inbound";
-              return (
-                <div
-                  key={email.id}
-                  className={`glass-card-sm p-3 border-l-2 ${
-                    isInbound ? "border-l-emerald-400/60" : "border-l-brand-400/60"
-                  }`}
-                >
-                  {/* Direction badge + date */}
-                  <div className="flex items-center justify-between mb-1">
-                    <span className={`text-[10px] font-semibold uppercase tracking-wider ${
-                      isInbound ? "text-emerald-400" : "text-brand-400"
-                    }`}>
-                      {isInbound ? "← Received" : "→ Sent"}
-                    </span>
-                    <span className="text-white/25 text-xs">
-                      {email.sent_at ? formatDate(email.sent_at) : "Draft"}
-                    </span>
-                  </div>
-                  {/* Subject */}
-                  <p className="text-sm font-medium text-white line-clamp-1">{email.subject}</p>
-                  {/* From address for inbound */}
-                  {isInbound && email.from_email && (
-                    <p className="text-xs text-white/35 mt-0.5">{email.from_email}</p>
-                  )}
-                  {/* Status for outbound */}
-                  {!isInbound && (
-                    <span className={`status-badge text-xs mt-1.5 ${statusColor(email.status)}`}>
-                      {email.status}
-                    </span>
-                  )}
-                </div>
-              );
-            }) : <p className="text-white/30 text-sm">No emails yet</p>}
-          </div>
-        </div>
-
-        {/* Bookings */}
-        <div className="glass-card p-5">
-          <h2 className="font-semibold text-white mb-4 flex items-center gap-2">📅 Bookings <span className="text-white/30 text-sm font-normal">({bookings?.length ?? 0})</span></h2>
-          <div className="space-y-3">
-            {bookings?.length ? bookings.map((booking) => (
-              <div key={booking.id} className="glass-card-sm p-3">
-                <p className="text-sm font-medium text-white">{formatDateTime(booking.booking_date)}</p>
-                <span className={`status-badge text-xs mt-1 ${statusColor(booking.status)}`}>{booking.status}</span>
-              </div>
-            )) : <p className="text-white/30 text-sm">No bookings yet</p>}
-          </div>
-        </div>
-      </div>
-
-      {/* Conversations */}
-      <div className="glass-card p-5">
-        <h2 className="font-semibold text-white mb-4">💬 Conversations ({conversations?.length ?? 0})</h2>
-        <div className="flex flex-wrap gap-3">
-          {conversations?.length ? conversations.map((conv) => (
-            <Link key={conv.id} href={`/conversations?id=${conv.id}`} className="glass-card-sm px-4 py-2.5 flex items-center gap-2 hover:bg-white/[0.06] transition-colors">
-              <span className="text-sm capitalize">{conv.channel}</span>
-              <span className="text-white/30 text-xs">{formatDate(conv.created_at)}</span>
-            </Link>
-          )) : <p className="text-white/30 text-sm">No conversations yet</p>}
-        </div>
-      </div>
+      {/* ── Main two-column layout ────────────────────────────────────────── */}
+      <LeadProfileClient
+        lead={{
+          id: lead.id,
+          name: lead.name,
+          email: lead.email,
+          phone: lead.phone,
+          source: lead.source,
+          status: lead.status,
+          client_id: lead.client_id,
+          created_at: lead.created_at,
+        }}
+        timeline={timeline}
+        totalTouchpoints={totalTouchpoints}
+        activeSequence={(activeSeq?.length ?? 0) > 0}
+      />
     </div>
   );
 }

@@ -8,6 +8,17 @@ export type BookingStatus = "pending" | "confirmed" | "cancelled" | "rescheduled
 export type IntegrationProvider = "gmail" | "outlook" | "facebook" | "instagram";
 export type EmailDirection = "outbound" | "inbound";
 export type SequenceStatus = "active" | "paused" | "completed" | "cancelled";
+export type NoteType = "note" | "status_change";
+
+export interface LeadNote {
+  id: string;
+  lead_id: string;
+  client_id: string;
+  type: NoteType;
+  content: string;
+  metadata: Record<string, string>;
+  created_at: string;
+}
 
 export interface Client {
   id: string;
@@ -136,6 +147,7 @@ export type Database = {
       conversations: { Row: Conversation; Insert: Omit<Conversation, "id" | "created_at">; Update: Partial<Omit<Conversation, "id">> };
       bookings: { Row: Booking; Insert: Omit<Booking, "id" | "created_at">; Update: Partial<Omit<Booking, "id">> };
       email_sequences: { Row: EmailSequence; Insert: Omit<EmailSequence, "id" | "created_at">; Update: Partial<Omit<EmailSequence, "id">> };
+      lead_notes: { Row: LeadNote; Insert: Omit<LeadNote, "id" | "created_at">; Update: Partial<Omit<LeadNote, "id">> };
     };
     Views: {
       lead_summary: { Row: LeadSummary };

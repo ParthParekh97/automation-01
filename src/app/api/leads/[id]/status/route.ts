@@ -20,7 +20,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { status } = body as { status?: string };
+  const { status, old_status } = body as { status?: string; old_status?: string };
   if (!status || !VALID_STATUSES.includes(status as LeadStatus)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
@@ -36,6 +36,17 @@ export async function PATCH(
 
   if (error || !lead) {
     return NextResponse.json({ error: error?.message ?? "Lead not found" }, { status: 404 });
+  }
+
+  // Log status change to lead_notes for the timeline
+  if (old_status && old_status !== status) {
+    supabase.from("lead_notes").insert({
+      lead_id: lead.id,
+      client_id: lead.client_id,
+      type: "status_change",
+      content: `Status changed from "${old_status.replace(/_/g, " ")}" to "${status.replace(/_/g, " ")}"`,
+      metadata: { from: old_status, to: status },
+    }).then().catch((err) => console.error("[status-route] note insert failed", err));
   }
 
   // Fire automation non-blocking — response returns immediately

@@ -47,6 +47,41 @@ interface CallSummaryParams {
   isNewLead: boolean;
 }
 
+interface EmailReplyParams {
+  leadName: string;
+  leadEmail: string;
+  subject: string;
+  snippet: string;
+}
+
+export function buildEmailReplyPayload(params: EmailReplyParams): SlackPayload {
+  const { leadName, leadEmail, subject, snippet } = params;
+  return {
+    text: `📧 Email reply from *${leadName}* — "${subject}"`,
+    blocks: [
+      {
+        type: "header",
+        text: { type: "plain_text", text: "📧 Lead Replied by Email" },
+      },
+      {
+        type: "section",
+        fields: [
+          { type: "mrkdwn", text: `*Lead*\n${leadName}` },
+          { type: "mrkdwn", text: `*From*\n${leadEmail}` },
+          { type: "mrkdwn", text: `*Subject*\n${subject}` },
+        ],
+      },
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `*Preview*\n>${snippet.slice(0, 280)}`,
+        },
+      },
+    ],
+  };
+}
+
 export function buildCallSummaryPayload(params: CallSummaryParams): SlackPayload {
   const { leadName, phone, outcome, durationSeconds, transcript, isNewLead } = params;
   const emoji = OUTCOME_EMOJI[outcome] ?? "📞";

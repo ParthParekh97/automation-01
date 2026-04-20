@@ -21,7 +21,7 @@ export default async function LeadDetailPage({ params }: Props) {
   ] = await Promise.all([
     supabase.from("leads").select("*").eq("id", id).single(),
     supabase.from("calls").select("*").eq("lead_id", id).order("created_at", { ascending: false }),
-    supabase.from("emails").select("*").eq("lead_id", id).order("sent_at", { ascending: false }),
+    supabase.from("emails").select("id, subject, body, status, sent_at, direction, from_email, gmail_message_id, thread_id").eq("lead_id", id).order("sent_at", { ascending: false }),
     supabase.from("conversations").select("id, channel, created_at").eq("lead_id", id),
     supabase.from("bookings").select("*").eq("lead_id", id).order("booking_date", { ascending: false }),
   ]);
@@ -78,17 +78,46 @@ export default async function LeadDetailPage({ params }: Props) {
 
         {/* Emails */}
         <div className="glass-card p-5">
-          <h2 className="font-semibold text-white mb-4 flex items-center gap-2">✉️ Emails <span className="text-white/30 text-sm font-normal">({emails?.length ?? 0})</span></h2>
-          <div className="space-y-3">
-            {emails?.length ? emails.map((email) => (
-              <div key={email.id} className="glass-card-sm p-3">
-                <p className="text-sm font-medium text-white line-clamp-1">{email.subject}</p>
-                <div className="flex items-center justify-between mt-1">
-                  <span className={`status-badge text-xs ${statusColor(email.status)}`}>{email.status}</span>
-                  <span className="text-white/30 text-xs">{email.sent_at ? formatDate(email.sent_at) : "Draft"}</span>
+          <h2 className="font-semibold text-white mb-4 flex items-center gap-2">
+            ✉️ Emails
+            <span className="text-white/30 text-sm font-normal">({emails?.length ?? 0})</span>
+          </h2>
+          <div className="space-y-2">
+            {emails?.length ? emails.map((email) => {
+              const isInbound = email.direction === "inbound";
+              return (
+                <div
+                  key={email.id}
+                  className={`glass-card-sm p-3 border-l-2 ${
+                    isInbound ? "border-l-emerald-400/60" : "border-l-brand-400/60"
+                  }`}
+                >
+                  {/* Direction badge + date */}
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-[10px] font-semibold uppercase tracking-wider ${
+                      isInbound ? "text-emerald-400" : "text-brand-400"
+                    }`}>
+                      {isInbound ? "← Received" : "→ Sent"}
+                    </span>
+                    <span className="text-white/25 text-xs">
+                      {email.sent_at ? formatDate(email.sent_at) : "Draft"}
+                    </span>
+                  </div>
+                  {/* Subject */}
+                  <p className="text-sm font-medium text-white line-clamp-1">{email.subject}</p>
+                  {/* From address for inbound */}
+                  {isInbound && email.from_email && (
+                    <p className="text-xs text-white/35 mt-0.5">{email.from_email}</p>
+                  )}
+                  {/* Status for outbound */}
+                  {!isInbound && (
+                    <span className={`status-badge text-xs mt-1.5 ${statusColor(email.status)}`}>
+                      {email.status}
+                    </span>
+                  )}
                 </div>
-              </div>
-            )) : <p className="text-white/30 text-sm">No emails yet</p>}
+              );
+            }) : <p className="text-white/30 text-sm">No emails yet</p>}
           </div>
         </div>
 

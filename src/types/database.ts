@@ -5,6 +5,8 @@ export type CallOutcome = "no_answer" | "voicemail" | "callback" | "interested" 
 export type EmailStatus = "draft" | "queued" | "sent" | "delivered" | "opened" | "clicked" | "bounced" | "failed";
 export type ConversationChannel = "sms" | "whatsapp" | "facebook" | "instagram" | "webchat" | "email";
 export type BookingStatus = "pending" | "confirmed" | "cancelled" | "rescheduled" | "completed" | "no_show";
+export type IntegrationProvider = "gmail" | "outlook" | "facebook" | "instagram";
+export type EmailDirection = "outbound" | "inbound";
 
 export interface Client {
   id: string;
@@ -14,6 +16,21 @@ export interface Client {
   active: boolean;
   plan: Plan;
   created_at: string;
+}
+
+export interface ClientIntegration {
+  id: string;
+  client_id: string;
+  provider: IntegrationProvider;
+  access_token_enc: string;
+  refresh_token_enc: string | null;
+  token_expiry: string | null;
+  scope: string | null;
+  connected_email: string | null;
+  gmail_history_id: string | null;
+  gmail_watch_expiry: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Lead {
@@ -47,6 +64,10 @@ export interface Email {
   body: string;
   status: EmailStatus;
   sent_at: string | null;
+  direction: EmailDirection;
+  gmail_message_id: string | null;
+  thread_id: string | null;
+  from_email: string | null;
 }
 
 export interface Message {
@@ -54,6 +75,8 @@ export interface Message {
   role: "user" | "assistant" | "system";
   content: string;
   timestamp: string;
+  /** Optional extra fields stored in JSONB — used by email channel for subject, from, etc. */
+  metadata?: Record<string, string>;
 }
 
 export interface Conversation {
@@ -88,6 +111,7 @@ export type Database = {
   public: {
     Tables: {
       clients: { Row: Client; Insert: Omit<Client, "id" | "token" | "created_at">; Update: Partial<Omit<Client, "id">> };
+      client_integrations: { Row: ClientIntegration; Insert: Omit<ClientIntegration, "id" | "created_at" | "updated_at">; Update: Partial<Omit<ClientIntegration, "id">> };
       leads: { Row: Lead; Insert: Omit<Lead, "id" | "created_at">; Update: Partial<Omit<Lead, "id">> };
       calls: { Row: Call; Insert: Omit<Call, "id" | "created_at">; Update: Partial<Omit<Call, "id">> };
       emails: { Row: Email; Insert: Omit<Email, "id">; Update: Partial<Omit<Email, "id">> };

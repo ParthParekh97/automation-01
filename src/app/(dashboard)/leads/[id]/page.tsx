@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { formatDate, formatDateTime, formatDuration, statusColor } from "@/lib/utils";
+import { CallButton } from "@/components/calls/CallButton";
 import Link from "next/link";
 
 interface Props {
@@ -44,7 +45,15 @@ export default async function LeadDetailPage({ params }: Props) {
             <span className="text-white/50 text-sm capitalize">🔗 {lead.source}</span>
           </div>
         </div>
-        <span className={`status-badge text-sm ${statusColor(lead.status)}`}>{lead.status}</span>
+        <div className="flex items-center gap-3">
+          <span className={`status-badge text-sm ${statusColor(lead.status)}`}>{lead.status}</span>
+          <CallButton
+            leadId={lead.id}
+            clientId={lead.client_id}
+            phone={lead.phone}
+            variant="full"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

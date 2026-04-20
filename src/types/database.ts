@@ -35,6 +35,7 @@ export interface Call {
   duration: number;
   transcript: string | null;
   recording_url: string | null;
+  vapi_call_id: string | null;
   created_at: string;
 }
 

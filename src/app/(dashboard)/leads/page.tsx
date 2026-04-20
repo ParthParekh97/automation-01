@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, statusColor } from "@/lib/utils";
+import { CallButton } from "@/components/calls/CallButton";
 import Link from "next/link";
 import type { LeadStatus, LeadSource } from "@/types/database";
 
@@ -41,7 +42,7 @@ export default async function LeadsPage() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/[0.07]">
-              {["Name", "Phone", "Email", "Source", "Status", "Created"].map((h) => (
+              {["Name", "Phone", "Email", "Source", "Status", "Created", ""].map((h) => (
                 <th key={h} className="text-left text-xs font-medium text-white/40 px-4 py-3 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
@@ -61,10 +62,18 @@ export default async function LeadsPage() {
                   <span className={`status-badge ${statusColor(lead.status)}`}>{lead.status}</span>
                 </td>
                 <td className="px-4 py-3 text-sm text-white/40">{formatDate(lead.created_at)}</td>
+                <td className="px-4 py-3">
+                  <CallButton
+                    leadId={lead.id}
+                    clientId={lead.client_id}
+                    phone={lead.phone}
+                    variant="compact"
+                  />
+                </td>
               </tr>
             )) : (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-white/30 text-sm">
+                <td colSpan={7} className="px-4 py-12 text-center text-white/30 text-sm">
                   No leads yet. <Link href="/leads/new" className="text-brand-400 hover:underline">Add your first lead</Link>
                 </td>
               </tr>

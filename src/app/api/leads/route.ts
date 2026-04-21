@@ -1,4 +1,4 @@
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { startSequence } from "@/lib/sequence";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -13,7 +13,7 @@ const createLeadSchema = z.object({
 });
 
 export async function GET(request: Request) {
-  const supabase = await createClient();
+  const supabase = createPureAdminClient();
   const { searchParams } = new URL(request.url);
   const client_id = searchParams.get("client_id");
 
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const supabase = createPureAdminClient();
   const body = await request.json();
   const parsed = createLeadSchema.safeParse(body);
 
@@ -37,8 +37,7 @@ export async function POST(request: Request) {
 
   // Auto-start email sequence for new leads that have an email address
   if (data && data.status === "new" && data.email) {
-    const admin = await createAdminClient();
-    startSequence(data.id, data.client_id, admin).catch((err) =>
+    startSequence(data.id, data.client_id, supabase).catch((err) =>
       console.error("[leads] startSequence failed", err)
     );
   }

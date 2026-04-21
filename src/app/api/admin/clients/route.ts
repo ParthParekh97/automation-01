@@ -1,5 +1,4 @@
 import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
-import { createAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 function createAuthAdmin() {
@@ -49,10 +48,10 @@ export async function POST(request: Request) {
   }
 
   const userId = userData.user.id;
-  const supabase = await createAdminClient();
 
+  // Use the same service-role client for DB insert — truly bypasses RLS
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: client, error: clientError } = await (supabase as any)
+  const { data: client, error: clientError } = await (authAdmin as any)
     .from("clients")
     .insert({
       id: userId,

@@ -1,4 +1,5 @@
 import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 function createAuthAdmin() {
@@ -49,9 +50,9 @@ export async function POST(request: Request) {
 
   const userId = userData.user.id;
 
-  // Use the same service-role client for DB insert — truly bypasses RLS
+  const dbAdmin = createPureAdminClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: client, error: clientError } = await (authAdmin as any)
+  const { data: client, error: clientError } = await (dbAdmin as any)
     .from("clients")
     .insert({
       id: userId,
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
     .single();
 
   if (clientError || !client) {
-    await authAdmin.auth.admin.deleteUser(userId);
+    await authAdmin.auth.admin.deleteUser(userId); // rollback auth user
     return NextResponse.json(
       { error: clientError?.message ?? "Failed to create client record" },
       { status: 500 }

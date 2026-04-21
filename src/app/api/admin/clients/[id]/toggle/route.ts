@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function PATCH(
@@ -6,7 +6,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createAdminClient();
+  const supabase = createPureAdminClient();
 
   const { data: current, error: fetchError } = await supabase
     .from("clients")

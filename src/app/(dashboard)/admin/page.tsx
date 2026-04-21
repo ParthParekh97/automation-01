@@ -1,4 +1,4 @@
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createClient, createPureAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 
@@ -12,7 +12,7 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  const adminSupabase = await createAdminClient();
+  const adminSupabase = createPureAdminClient();
 
   const { data: clients } = await adminSupabase
     .from("clients")

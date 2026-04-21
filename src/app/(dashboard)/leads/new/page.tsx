@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const SOURCES = ["manual", "web", "facebook", "instagram", "google", "referral", "other"] as const;
+
+interface ClientOption {
+  id: string;
+  name: string;
+  email: string;
+}
 
 export default function NewLeadPage() {
   const router = useRouter();
@@ -12,22 +18,32 @@ export default function NewLeadPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [source, setSource] = useState<typeof SOURCES[number]>("manual");
+  const [clients, setClients] = useState<ClientOption[]>([]);
+  const [clientId, setClientId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Fetch available clients on mount
+  useEffect(() => {
+    fetch("/api/clients")
+      .then((r) => r.json())
+      .then((data: ClientOption[]) => {
+        setClients(data);
+        if (data.length > 0) setClientId(data[0].id);
+      })
+      .catch(() => setError("Failed to load clients"));
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
-    // Get client_id from current session
-    const meRes = await fetch("/api/auth/me");
-    if (!meRes.ok) {
-      setError("Could not get session. Please refresh.");
-      setLoading(false);
+    if (!clientId) {
+      setError("Please select a client. Create one in /admin first.");
       return;
     }
-    const { client_id } = await meRes.json();
+
+    setLoading(true);
 
     const res = await fetch("/api/leads", {
       method: "POST",
@@ -37,7 +53,7 @@ export default function NewLeadPage() {
         email: email || undefined,
         phone: phone || undefined,
         source,
-        client_id,
+        client_id: clientId,
       }),
     });
 
@@ -45,7 +61,7 @@ export default function NewLeadPage() {
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? "Failed to create lead");
+      setError(typeof data.error === "string" ? data.error : "Failed to create lead");
       return;
     }
 
@@ -69,6 +85,32 @@ export default function NewLeadPage() {
       {/* Form */}
       <div className="glass-card p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
+          {clients.length > 1 && (
+            <div>
+              <label className="text-white/60 text-xs block mb-1.5">
+                Client <span className="text-red-400">*</span>
+              </label>
+              <select
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                className="glass-input w-full"
+                required
+              >
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {clients.length === 0 && (
+            <div className="text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded p-3">
+              No clients found. Go to <Link href="/admin" className="underline">/admin</Link> and create one first.
+            </div>
+          )}
+
           <div>
             <label className="text-white/60 text-xs block mb-1.5">
               Full Name <span className="text-red-400">*</span>

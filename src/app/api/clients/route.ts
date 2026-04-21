@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient, createPureAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -9,10 +9,24 @@ const createClientSchema = z.object({
 });
 
 export async function GET() {
-  const supabase = await createAdminClient();
-  const { data, error } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  const admin = createPureAdminClient();
+  const isSuperAdmin = user.email === process.env.SUPER_ADMIN_EMAIL;
+
+  let query = admin.from("clients").select("*");
+  if (!isSuperAdmin) query = query.eq("id", user.id);
+
+  const { data, error } = await query.order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  return NextResponse.json(data ?? []);
 }
 
 export async function POST(request: Request) {

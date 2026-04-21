@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { statusColor } from "@/lib/utils";
 import Link from "next/link";
@@ -13,7 +13,7 @@ interface Props {
 
 export default async function LeadDetailPage({ params }: Props) {
   const { id } = await params;
-  const supabase = await createClient();
+  const supabase = createPureAdminClient();
 
   const [
     { data: lead },

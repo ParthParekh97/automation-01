@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -7,7 +7,7 @@ export async function GET(
 ) {
   const { id: lead_id } = await params;
 
-  const supabase = await createAdminClient();
+  const supabase = createPureAdminClient();
 
   // Fetch lead + activity counts in parallel
   const [{ data: lead }, { count: callCount }, { count: emailCount }, { count: convCount }] =

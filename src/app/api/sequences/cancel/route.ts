@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { cancelSequence } from "@/lib/sequence";
 import { NextResponse } from "next/server";
 
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "sequence_id is required" }, { status: 400 });
   }
 
-  const supabase = await createAdminClient();
+  const supabase = createPureAdminClient();
 
   try {
     await cancelSequence(sequence_id, "manual_cancel", supabase);

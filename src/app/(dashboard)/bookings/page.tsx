@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { formatDateTime, statusColor } from "@/lib/utils";
 import Link from "next/link";
 
 export default async function BookingsPage() {
-  const supabase = await createClient();
+  const supabase = createPureAdminClient();
   const { data: bookings } = await supabase
     .from("bookings")
     .select("*, leads(name)")

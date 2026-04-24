@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { StatCard } from "@/components/ui/StatCard";
 import { formatDate, statusColor } from "@/lib/utils";
 import Link from "next/link";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
+  const supabase = createPureAdminClient();
 
   const [
     { count: totalLeads },

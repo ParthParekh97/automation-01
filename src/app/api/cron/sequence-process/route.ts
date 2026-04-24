@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { processSequence } from "@/lib/sequence";
 import { NextResponse } from "next/server";
 
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = await createAdminClient();
+  const supabase = createPureAdminClient();
 
   // Kill switch: only process sequences for active clients
   const { data: activeClients } = await supabase

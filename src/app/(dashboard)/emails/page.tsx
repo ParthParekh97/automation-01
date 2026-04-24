@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { EmailDashboard } from "@/components/emails/EmailDashboard";
 
 // Supabase join shape
@@ -20,7 +20,7 @@ interface EmailJoinRow {
 }
 
 export default async function EmailsPage() {
-  const supabase = await createClient();
+  const supabase = createPureAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

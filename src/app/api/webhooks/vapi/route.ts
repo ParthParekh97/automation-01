@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { sendSlackNotification, buildCallSummaryPayload } from "@/lib/slack";
 import { NextResponse } from "next/server";
 import type { CallOutcome, LeadStatus } from "@/types/database";
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "client_id missing" }, { status: 422 });
   }
 
-  const supabase = await createAdminClient();
+  const supabase = createPureAdminClient();
 
   // 5. Find or create lead by phone number
   let leadId: string;

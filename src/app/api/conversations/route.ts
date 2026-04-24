@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -17,7 +17,7 @@ const createConversationSchema = z.object({
 });
 
 export async function GET(request: Request) {
-  const supabase = await createClient();
+  const supabase = createPureAdminClient();
   const { searchParams } = new URL(request.url);
   const client_id = searchParams.get("client_id");
   const lead_id = searchParams.get("lead_id");
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const supabase = createPureAdminClient();
   const body = await request.json();
   const parsed = createConversationSchema.safeParse(body);
 

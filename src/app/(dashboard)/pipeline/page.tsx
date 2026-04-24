@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { KanbanBoard } from "@/components/pipeline/KanbanBoard";
 import type { LeadCardData } from "@/components/pipeline/LeadCard";
 
@@ -53,7 +53,7 @@ function buildLastActivity(lead: LeadRow): LeadCardData["last_activity"] {
 }
 
 export default async function PipelinePage() {
-  const supabase = await createClient();
+  const supabase = createPureAdminClient();
 
   const { data: raw } = await supabase
     .from("leads")

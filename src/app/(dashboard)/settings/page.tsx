@@ -1,4 +1,4 @@
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createClient, createPureAdminClient } from "@/lib/supabase/server";
 import { GmailConnectCard } from "@/components/settings/GmailConnectCard";
 
 interface Props {
@@ -14,7 +14,7 @@ export default async function SettingsPage({ searchParams }: Props) {
   } = await supabase.auth.getUser();
 
   // Fetch Gmail integration for this client (if connected)
-  const admin = await createAdminClient();
+  const admin = createPureAdminClient();
   const { data: gmailIntegration } = await admin
     .from("client_integrations")
     .select("connected_email, created_at")

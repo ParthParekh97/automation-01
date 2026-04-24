@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { startSequence } from "@/lib/sequence";
 import { NextResponse } from "next/server";
 
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "lead_id and client_id are required" }, { status: 400 });
   }
 
-  const supabase = await createAdminClient();
+  const supabase = createPureAdminClient();
 
   try {
     await startSequence(lead_id, client_id, supabase);

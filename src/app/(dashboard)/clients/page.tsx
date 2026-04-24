@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 
 export default async function ClientsPage() {
-  const supabase = await createClient();
+  const supabase = createPureAdminClient();
   const { data: clients } = await supabase
     .from("clients")
     .select("*")

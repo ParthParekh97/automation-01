@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     failed: "no_answer",
   };
 
-  const supabase = await createAdminClient();
+  const supabase = createPureAdminClient();
 
   await supabase.from("calls").update({
     outcome: outcomeMap[callStatus] ?? "other",

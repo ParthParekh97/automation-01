@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { exchangeCode, getProfile } from "@/lib/gmail";
 import { encrypt } from "@/lib/encryption";
 import { type NextRequest, NextResponse } from "next/server";
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
   const refreshTokenEnc = tokens.refresh_token ? encrypt(tokens.refresh_token) : null;
   const tokenExpiry = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
-  const supabase = await createAdminClient();
+  const supabase = createPureAdminClient();
   const { error: upsertErr } = await supabase.from("client_integrations").upsert(
     {
       client_id: clientId,

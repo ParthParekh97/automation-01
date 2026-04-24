@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { formatDateTime } from "@/lib/utils";
 import Link from "next/link";
 import type { Message } from "@/types/database";
 
 export default async function ConversationsPage() {
-  const supabase = await createClient();
+  const supabase = createPureAdminClient();
   const { data: conversations } = await supabase
     .from("conversations")
     .select("*, leads(name)")

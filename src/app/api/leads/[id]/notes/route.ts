@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function POST(
@@ -17,7 +17,7 @@ export async function POST(
     return NextResponse.json({ error: "content and client_id are required" }, { status: 400 });
   }
 
-  const supabase = await createAdminClient();
+  const supabase = createPureAdminClient();
 
   const { data, error } = await supabase
     .from("lead_notes")

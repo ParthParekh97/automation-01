@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { sendEmail, getValidAccessToken } from "@/lib/gmail";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const { lead_id, client_id, subject, body, thread_id, in_reply_to } = parsed.data;
-  const supabase = await createAdminClient();
+  const supabase = createPureAdminClient();
 
   // Fetch lead
   const { data: lead } = await supabase
@@ -139,7 +139,7 @@ export async function upsertEmailConversation(params: {
   client_id: string;
   message: ConvMessage;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: ReturnType<typeof createAdminClient> extends Promise<infer T> ? T : never;
+  supabase: ReturnType<typeof createPureAdminClient>;
 }) {
   const { lead_id, client_id, message, supabase } = params;
 

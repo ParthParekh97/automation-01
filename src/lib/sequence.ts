@@ -1,8 +1,8 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { generateSequenceEmail } from "@/lib/claude";
 import { getValidAccessToken, sendEmail } from "@/lib/gmail";
 
-type SupabaseAdmin = Awaited<ReturnType<typeof createAdminClient>>;
+type SupabaseAdmin = ReturnType<typeof createPureAdminClient>;
 
 const STEP_DELAYS_MS: Record<number, number> = {
   1: 0,                          // step 1: send immediately

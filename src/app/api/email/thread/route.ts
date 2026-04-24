@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "lead_id and client_id are required" }, { status: 400 });
   }
 
-  const supabase = await createAdminClient();
+  const supabase = createPureAdminClient();
   const { data, error } = await supabase
     .from("emails")
     .select("id, lead_id, client_id, subject, body, status, sent_at, direction, from_email, thread_id, gmail_message_id")

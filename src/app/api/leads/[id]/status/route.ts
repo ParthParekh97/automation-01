@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { getValidAccessToken, sendEmail } from "@/lib/gmail";
 import { NextResponse } from "next/server";
 
@@ -25,7 +25,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
-  const supabase = await createAdminClient();
+  const supabase = createPureAdminClient();
 
   const { data: lead, error } = await supabase
     .from("leads")
@@ -59,7 +59,7 @@ export async function PATCH(
 
 // ── Automations ───────────────────────────────────────────────────────────────
 
-type SupabaseAdmin = Awaited<ReturnType<typeof createAdminClient>>;
+type SupabaseAdmin = ReturnType<typeof createPureAdminClient>;
 
 async function fireAutomation(
   leadId: string,

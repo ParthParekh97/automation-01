@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
   }
 
   const { lead_id, client_id } = parsed.data;
-  const supabase = await createAdminClient();
+  const supabase = createPureAdminClient();
 
   // 2. Fetch lead — need phone number and name
   const { data: lead, error: leadErr } = await supabase

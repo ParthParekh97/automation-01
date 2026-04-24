@@ -1,4 +1,4 @@
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createClient, createPureAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 /**
@@ -18,7 +18,7 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const admin = await createAdminClient();
+  const admin = createPureAdminClient();
   const { error } = await admin
     .from("client_integrations")
     .delete()

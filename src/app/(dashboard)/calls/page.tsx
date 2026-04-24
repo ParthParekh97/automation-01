@@ -1,8 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { CallsDashboard, type CallRow } from "@/components/calls/CallsDashboard";
 
 export default async function CallsPage() {
-  const supabase = await createClient();
+  const supabase = createPureAdminClient();
 
   const { data: calls, error } = await supabase
     .from("calls")

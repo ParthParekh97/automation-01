@@ -1,11 +1,11 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPureAdminClient } from "@/lib/supabase/server";
 import { formatDate, statusColor } from "@/lib/utils";
 import { CallButton } from "@/components/calls/CallButton";
 import Link from "next/link";
 import type { LeadStatus, LeadSource } from "@/types/database";
 
 export default async function LeadsPage() {
-  const supabase = await createClient();
+  const supabase = createPureAdminClient();
   const { data: leads } = await supabase
     .from("leads")
     .select("*")

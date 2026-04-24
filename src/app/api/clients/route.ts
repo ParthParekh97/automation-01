@@ -30,7 +30,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createAdminClient();
+  const supabase = createPureAdminClient();
   const body = await request.json();
   const parsed = createClientSchema.safeParse(body);
 
